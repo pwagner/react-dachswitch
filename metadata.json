@@ -1,0 +1,5 @@
+{
+  "name": "DACHSwitch",
+  "description": "A demo application showcasing the DACHSwitch npm package for country-based content filtering.",
+  "requestFramePermissions": []
+}
