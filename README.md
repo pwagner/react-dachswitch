@@ -147,9 +147,11 @@ This project uses **Vitest** for unit testing.
 
 ### Hosting the Demo
 
-To build the demo application (e.g., for GitHub Pages):
+To build the demo application and deploy it to GitHub Pages using a Personal Access Token):
 1. `npm run build:demo`
 2. The output will be in the `build/` directory.
+3. `export GH_TOKEN="[YOUR_PAT_TOKEN]"`
+4. `npm run deploy`
 
 ## License
 
