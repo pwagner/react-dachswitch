@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // This config is used for building the DEMO app (GitHub Pages), not the library itself.
@@ -10,4 +10,8 @@ export default defineConfig({
   // If deploying to https://<USERNAME>.github.io/react-dachswitch/
   // valid base is '/react-dachswitch/'
   base: './', 
+  test: {
+    globals: true,
+    environment: 'jsdom',
+  },
 });
