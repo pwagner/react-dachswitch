@@ -15,7 +15,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run build:lib && npm run build:demo",
-    "build:lib": "tsc -p tsconfig.json",
+    "build:lib": "vite build --config vite.config.lib.ts && tsc -p tsconfig.json --emitDeclarationOnly",
     "build:demo": "tsc && vite build",
     "deploy": "gh-pages -d build",
     "preview": "vite preview",
