@@ -1,4 +1,3 @@
-
 # React DACHSwitch 🏔️
 
 A lightweight, aesthetic, and reusable React component for country-based content filtering, specifically designed for the DACH region (Germany 🇩🇪, Austria 🇦🇹, Switzerland 🇨🇭).
@@ -16,6 +15,25 @@ A lightweight, aesthetic, and reusable React component for country-based content
 
 ```bash
 npm install react-dachswitch
+```
+
+## Styling (Important)
+
+This component uses **Tailwind CSS** classes. For the styles to appear correctly, you must include the package in your `tailwind.config.js` content array so Tailwind scans it for class names:
+
+```js
+// tailwind.config.js
+module.exports = {
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}",
+    // Add this line:
+    "./node_modules/react-dachswitch/**/*.{js,ts,jsx,tsx}"
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
 ```
 
 ## Usage
@@ -121,6 +139,17 @@ This project uses **Vitest** for unit testing.
 
 1. Install dependencies: `npm install`
 2. Run tests: `npm test`
+
+### Publishing
+
+1. Build the library: `npm run build:lib`
+2. Publish: `npm publish`
+
+### Hosting the Demo
+
+To build the demo application (e.g., for GitHub Pages):
+1. `npm run build:demo`
+2. The output will be in the `build/` directory.
 
 ## License
 
