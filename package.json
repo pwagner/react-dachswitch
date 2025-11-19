@@ -6,7 +6,7 @@
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
-  "homepage": "https://github.com/username/react-dachswitch",
+  "homepage": "https://github.com/pwagner/react-dachswitch",
   "files": [
     "dist"
   ],
@@ -18,8 +18,7 @@
     "build:demo": "tsc && vite build",
     "deploy": "gh-pages -d build",
     "preview": "vite preview",
-    "test": "vitest",
-    "prepublishOnly": "npm run build:lib"
+    "test": "vitest"
   },
   "keywords": [
     "react",
@@ -34,7 +33,7 @@
     "ui",
     "component"
   ],
-  "author": "Senior Frontend Engineer",
+  "author": "Paul Wagner",
   "license": "MIT",
   "peerDependencies": {
     "react": "^18.0.0",
