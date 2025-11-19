@@ -27,7 +27,7 @@ const App: React.FC = () => {
              <span>🏔️</span>
              <span>DACHSwitch</span>
            </div>
-           <a href="https://github.com" className="text-slate-500 hover:text-slate-800 transition-colors">
+           <a href="https://github.com/pwagner/react-dachswitch" className="text-slate-500 hover:text-slate-800 transition-colors">
              <Github className="w-6 h-6" />
            </a>
         </div>
@@ -242,7 +242,7 @@ const App: React.FC = () => {
                   <td className="py-2 pr-4 font-mono text-blue-600">defaultActive</td>
                   <td className="py-2 pr-4">string | string[]</td>
                   <td className="py-2 pr-4">"D"</td>
-                  <td className="py-2">Initial selection. Accepts arrays like ["D", "A"].</td>
+                  <td className="py-2">Initial selection. Accepts arrays like ["A", "CH"].</td>
                 </tr>
               </tbody>
             </table>
