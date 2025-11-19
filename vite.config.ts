@@ -7,9 +7,7 @@ export default defineConfig({
   build: {
     outDir: 'build', // Output demo to 'build' folder to avoid conflict with library 'dist'
   },
-  // If deploying to https://<USERNAME>.github.io/react-dachswitch/
-  // valid base is '/react-dachswitch/'
-  base: './', 
+  base: '/react-dachswitch/', 
   test: {
     globals: true,
     environment: 'jsdom',

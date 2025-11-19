@@ -1,6 +1,6 @@
-
+// @vitest-environment jsdom
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DACHSwitch } from './DACHSwitch';
 
@@ -25,10 +25,10 @@ describe('DACHSwitch', () => {
   });
 
   it('renders flags correctly', () => {
-    render(<DACHSwitch />);
-    expect(screen.getByTitle('Filter by D')).toBeDefined();
-    expect(screen.getByTitle('Filter by A')).toBeDefined();
-    expect(screen.getByTitle('Filter by CH')).toBeDefined();
+    const { getByTitle } = render(<DACHSwitch />);
+    expect(getByTitle('Filter by D')).toBeDefined();
+    expect(getByTitle('Filter by A')).toBeDefined();
+    expect(getByTitle('Filter by CH')).toBeDefined();
   });
 
   it('filters content based on default selection (All Active)', () => {
@@ -42,20 +42,23 @@ describe('DACHSwitch', () => {
     expect(atItem?.style.display).toBe('');
   });
 
-  it('hides content when flag is deselected', () => {
-    render(<DACHSwitch defaultAllActive={false} defaultActive={["D"]} />);
+  it('hides content when flag is deselected', async () => {
+    const { getByTestId } = render(<DACHSwitch defaultAllActive={false} defaultActive={["D"]} />);
     
     const deItem = document.getElementById('de-item');
     const atItem = document.getElementById('at-item');
     
+    // Initial state: D selected
     expect(deItem?.style.display).toBe('');
     expect(atItem?.style.display).toBe('none');
     
     // Click 'A' to toggle it on
-    const aBtn = screen.getByTestId('flag-A');
+    const aBtn = getByTestId('flag-A');
     fireEvent.click(aBtn);
     
-    expect(atItem?.style.display).toBe('');
+    await waitFor(() => {
+      expect(atItem?.style.display).toBe('');
+    });
   });
 
   it('supports custom attributes', () => {
@@ -65,16 +68,23 @@ describe('DACHSwitch', () => {
       <div lang="AT" id="custom-at">AT Lang</div>
     `;
 
-    render(<DACHSwitch countryCodeAttribute="lang" defaultAllActive={false} defaultActive="DE" codes={{'D': 'DE', 'A': 'AT', 'CH': 'CH'}} />);
+    // We use defaultAllActive=false and select 'D' (which maps to DE)
+    render(
+      <DACHSwitch 
+        countryCodeAttribute="lang" 
+        defaultAllActive={false} 
+        defaultActive={["D"]} 
+        codes={{'D': 'DE', 'A': 'AT'}} 
+      />
+    );
 
     const customDe = document.getElementById('custom-de');
     const customAt = document.getElementById('custom-at');
 
-    // Initial: only DE selected (mapped to D)
-    // Wait, defaultActive maps to UI label (keys), not values.
-    // So defaultActive="D" maps to value "DE".
-    
-    // Let's restart this specific test with correct props
+    // DE should be visible
+    expect(customDe?.style.display).toBe('');
+    // AT should be hidden
+    expect(customAt?.style.display).toBe('none');
   });
   
   it('correctly maps UI labels to custom attribute values', () => {
@@ -92,19 +102,25 @@ describe('DACHSwitch', () => {
     expect(customAt?.style.display).toBe('none');
   });
 
-  it('toggles all when DACH button is clicked', () => {
-     render(<DACHSwitch showAllToggle={true} defaultAllActive={true} />);
+  it('toggles all when DACH button is clicked', async () => {
+     const { getByTitle } = render(<DACHSwitch showAllToggle={true} defaultAllActive={true} />);
      
-     const dachBtn = screen.getByTitle('Toggle All Countries');
+     const dachBtn = getByTitle('Toggle All Countries');
      
      // Click to deselect all
      fireEvent.click(dachBtn);
      
      const deItem = document.getElementById('de-item');
-     expect(deItem?.style.display).toBe('none');
+     
+     await waitFor(() => {
+       expect(deItem?.style.display).toBe('none');
+     });
      
      // Click to select all
      fireEvent.click(dachBtn);
-     expect(deItem?.style.display).toBe('');
+     
+     await waitFor(() => {
+       expect(deItem?.style.display).toBe('');
+     });
   });
 });
