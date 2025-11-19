@@ -25,7 +25,7 @@ const App: React.FC = () => {
         <div className="max-w-6xl mx-auto flex justify-between items-center">
            <div className="flex items-center space-x-2 font-bold text-slate-800 text-xl">
              <span>🏔️</span>
-             <span>React DACHSwitch</span>
+             <span>DACHSwitch</span>
            </div>
            <a href="https://github.com" className="text-slate-500 hover:text-slate-800 transition-colors">
              <Github className="w-6 h-6" />
@@ -36,12 +36,38 @@ const App: React.FC = () => {
       <div className="flex-grow flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
         
         <header className="text-center mb-10 max-w-2xl">
-          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-4">
-            Country Filtering Made Easy
+
+          <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-8 flex justify-center items-center p-2 whitespace-nowrap">
+              Country Filtering Made
+              
+              {/* Container for 'Easy' and 'DeutschsprACHig' */}
+              <span className="relative inline-block mx-2">
+                  {/* Struck-through "Easy" (Flow placeholder) */}
+                  <span className="line-through">Easy</span>
+                  
+                  {/* Simplified Handwriting replacement: DeutschsprACHig - Absolute position for layering */}
+                  <span 
+                      className="
+                          absolute 
+                          text-red-700                 /* Dark Red color */
+                          text-3xl 
+                          transform 
+                          -rotate-3 
+                          origin-bottom-left
+                          -top-6                         /* Move up */
+                          -right-20                       /* Move slightly right */
+                      "
+                      style={{ fontFamily: 'Permanent Marker, cursive' }} 
+                  >
+                      DeutschsprACHig
+                  </span>
+              </span>
           </h1>
+
           <p className="text-lg text-slate-600 mb-8">
             A powerful, aesthetic React component for filtering content by DACH regions (Germany, Austria, Switzerland).
           </p>
+
         </header>
 
         {/* Interactive Demo Section */}
@@ -153,13 +179,13 @@ const App: React.FC = () => {
 
           <div className="bg-white rounded-xl p-8 shadow-sm border border-slate-200">
             <h3 className="text-xl text-slate-900 mt-0">Installation</h3>
-            <pre className="bg-slate-900 text-slate-50 p-4 rounded-lg overflow-x-auto">
+            <pre className="bg-slate-900 text-slate-50 p-4 rounded-lg overflow-x-auto mt-4">
               <code>npm install react-dachswitch</code>
             </pre>
 
             <h3 className="text-xl text-slate-900 mt-8">Basic Usage</h3>
             <p>Import the component. By default, it looks for any element with a <code>data-country</code> attribute.</p>
-            <pre className="bg-slate-900 text-slate-50 p-4 rounded-lg overflow-x-auto">
+            <pre className="bg-slate-900 text-slate-50 p-4 rounded-lg overflow-x-auto mt-4">
 <code>{`import { DACHSwitch } from 'react-dachswitch';
 
 // ... inside your component
@@ -172,7 +198,7 @@ const App: React.FC = () => {
 
              <h3 className="text-xl text-slate-900 mt-8">Target Specific Elements</h3>
             <p>Use <code>targetSelector</code> if you only want to filter specific parts of the page.</p>
-            <pre className="bg-slate-900 text-slate-50 p-4 rounded-lg overflow-x-auto">
+            <pre className="bg-slate-900 text-slate-50 p-4 rounded-lg overflow-x-auto mt-4">
 <code>{`// Only filters elements with class .item that have data-country
 <DACHSwitch targetSelector=".item" />`}</code>
             </pre>
@@ -223,7 +249,7 @@ const App: React.FC = () => {
 
             <h3 className="text-xl text-slate-900 mt-8">Astro Best Practice</h3>
             <p>For static sites like Astro, ensure you use the <code>client:load</code> directive so the filtering works immediately.</p>
-            <pre className="bg-slate-900 text-slate-50 p-4 rounded-lg overflow-x-auto">
+            <pre className="bg-slate-900 text-slate-50 p-4 rounded-lg overflow-x-auto mt-4">
 <code>{`---
 import { DACHSwitch } from 'react-dachswitch';
 ---
