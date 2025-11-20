@@ -1,6 +1,6 @@
 {
   "name": "react-dachswitch",
-  "version": "1.2.5",
+  "version": "1.3.1",
   "description": "A lightweight, country-based content filtering React component for the DACH region.",
   "main": "./dist/react-dachswitch.umd.cjs",
     "module": "./dist/react-dachswitch.js",
@@ -15,7 +15,9 @@
     "./dist/style.css": "./dist/style.css"
   },
   "homepage": "https://pwagner.github.io/react-dachswitch",
-  "repository": "https://github.com/pwagner/react-dachswitch",
+  "repository": {
+    "url": "https://github.com/pwagner/react-dachswitch"
+  },
   "files": [
     "dist"
   ],
