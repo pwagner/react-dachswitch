@@ -23,8 +23,8 @@ export interface DACHSwitchProps {
   codes?: Record<string, string>;
 
   /**
-   * The initial active UI label(s).
-   * Can be a single key (e.g., "D") or an array of keys (e.g., ["D", "A"]).
+   * The initial active UI label(s) OR value(s).
+   * Can be a single key/value (e.g., "D" or "DE") or an array (e.g., ["D", "AT"]).
    * Ignored if defaultAllActive is true.
    */
   defaultActive?: string | string[];
@@ -48,6 +48,19 @@ export interface DACHSwitchProps {
    * Default: false
    */
   singleSelect?: boolean;
+
+  /**
+   * If true, the selection state will be saved to localStorage and restored on reload.
+   * Default: true
+   */
+  persist?: boolean;
+
+  /**
+   * The key used for localStorage when persist is true.
+   * Change this if you have multiple switches on the same site.
+   * Default: "dach-switch-selection"
+   */
+  storageKey?: string;
 }
 
 const FLAGS: Record<string, string> = {
@@ -63,20 +76,69 @@ export const DACHSwitch: React.FC<DACHSwitchProps> = ({
   defaultActive = "D",
   showAllToggle = true,
   defaultAllActive = true,
-  singleSelect = false
+  singleSelect = false,
+  persist = true,
+  storageKey = "dach-switch-selection"
 }) => {
   // Helper to get all available labels
   const allLabels = useMemo(() => Object.keys(codes), [codes]);
 
-  // Initialize state
+  // Initialize state with Lazy Initializer for Persistence and Normalization
   const [activeLabels, setActiveLabels] = useState<string[]>(() => {
+    // 1. Try to load from LocalStorage if enabled
+    if (persist && typeof window !== 'undefined') {
+      try {
+        const saved = window.localStorage.getItem(storageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            // Sanity check: filter out any keys that no longer exist in 'codes'
+            const validKeys = parsed.filter(k => Object.prototype.hasOwnProperty.call(codes, k));
+            if (validKeys.length > 0) {
+              return validKeys;
+            }
+          }
+        }
+      } catch (error) {
+        console.warn("DACHSwitch: Failed to parse localStorage item", error);
+      }
+    }
+
+    // 2. Fallback: Handle defaultAllActive
     if (defaultAllActive) return [...allLabels];
-    if (Array.isArray(defaultActive)) return defaultActive;
-    return [defaultActive];
+
+    // 3. Fallback: Normalize defaultActive
+    // This allows users to pass "DE" (value) instead of "D" (key) and still work.
+    const inputs = Array.isArray(defaultActive) ? defaultActive : [defaultActive];
+    const normalizedDefaults: string[] = [];
+
+    inputs.forEach(input => {
+      // Check if input is a Key (e.g., "D")
+      if (Object.prototype.hasOwnProperty.call(codes, input)) {
+        normalizedDefaults.push(input);
+        return;
+      }
+      // Check if input is a Value (e.g., "DE") -> find its Key
+      const foundKey = Object.keys(codes).find(key => codes[key] === input);
+      if (foundKey) {
+        normalizedDefaults.push(foundKey);
+      }
+    });
+
+    // If normalization resulted in empty array but we had inputs, fallback to empty (nothing selected)
+    // or if inputs were empty, defaults to empty.
+    return normalizedDefaults;
   });
 
   // Computed property: Are all options currently selected?
   const isAllSelected = allLabels.length > 0 && allLabels.every(label => activeLabels.includes(label));
+
+  // Effect: Save to LocalStorage whenever selection changes
+  useEffect(() => {
+    if (persist && typeof window !== 'undefined') {
+      window.localStorage.setItem(storageKey, JSON.stringify(activeLabels));
+    }
+  }, [activeLabels, persist, storageKey]);
 
   const filterContent = () => {
     // If no selector provided, target anything with the specific attribute
@@ -92,9 +154,6 @@ export const DACHSwitch: React.FC<DACHSwitchProps> = ({
       // Elements without the attribute are always visible (if caught by a broad selector)
       // OR if they are layout elements wrapping the content.
       if (!element.hasAttribute(countryCodeAttribute)) {
-        // If the selector was specific (e.g. .card) but attribute is missing, 
-        // we generally leave it alone unless logic dictates otherwise.
-        // Current logic: if it doesn't have the attribute, we don't filter it.
         element.style.display = '';
         return;
       }

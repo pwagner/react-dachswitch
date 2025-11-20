@@ -9,6 +9,9 @@ describe('DACHSwitch', () => {
 
   // Setup DOM elements for filtering before each test
   beforeEach(() => {
+    // Clear storage to ensure clean state for persistence tests
+    localStorage.clear();
+
     container = document.createElement('div');
     document.body.appendChild(container);
     
@@ -43,7 +46,7 @@ describe('DACHSwitch', () => {
   });
 
   it('hides content when flag is deselected', async () => {
-    const { getByTestId } = render(<DACHSwitch defaultAllActive={false} defaultActive={["D"]} />);
+    const { getByTestId } = render(<DACHSwitch defaultAllActive={false} defaultActive={["D"]} persist={false} />);
     
     const deItem = document.getElementById('de-item');
     const atItem = document.getElementById('at-item');
@@ -74,6 +77,7 @@ describe('DACHSwitch', () => {
         countryCodeAttribute="lang" 
         defaultAllActive={false} 
         defaultActive={["D"]} 
+        persist={false}
         codes={{'D': 'DE', 'A': 'AT'}} 
       />
     );
@@ -93,7 +97,7 @@ describe('DACHSwitch', () => {
       <div lang="AT" id="custom-at">AT Lang</div>
     `;
     
-    render(<DACHSwitch countryCodeAttribute="lang" defaultAllActive={false} defaultActive="D" />);
+    render(<DACHSwitch countryCodeAttribute="lang" defaultAllActive={false} defaultActive="D" persist={false} />);
     
     const customDe = document.getElementById('custom-de');
     const customAt = document.getElementById('custom-at');
@@ -103,7 +107,7 @@ describe('DACHSwitch', () => {
   });
 
   it('toggles all when DACH button is clicked', async () => {
-     const { getByTitle } = render(<DACHSwitch showAllToggle={true} defaultAllActive={true} />);
+     const { getByTitle } = render(<DACHSwitch showAllToggle={true} defaultAllActive={true} persist={false} />);
      
      const dachBtn = getByTitle('Toggle All Countries');
      
@@ -122,5 +126,102 @@ describe('DACHSwitch', () => {
      await waitFor(() => {
        expect(deItem?.style.display).toBe('');
      });
+  });
+
+  // --- NEW TESTS ---
+
+  it('normalizes defaultActive values (codes instead of labels)', () => {
+    // Pass "DE" (Value) instead of "D" (Key)
+    render(
+      <DACHSwitch 
+        defaultAllActive={false} 
+        defaultActive={["DE", "AT"]} 
+        persist={false}
+      />
+    );
+
+    const deItem = document.getElementById('de-item');
+    const atItem = document.getElementById('at-item');
+    const chItem = document.getElementById('ch-item');
+
+    // DE and AT should be visible, CH hidden
+    expect(deItem?.style.display).toBe('');
+    expect(atItem?.style.display).toBe('');
+    expect(chItem?.style.display).toBe('none');
+  });
+
+  it('enforces singleSelect behavior', async () => {
+    const { getByTestId } = render(
+      <DACHSwitch 
+        defaultAllActive={false} 
+        defaultActive="D" 
+        singleSelect={true} 
+        persist={false}
+      />
+    );
+
+    const deItem = document.getElementById('de-item');
+    const atItem = document.getElementById('at-item');
+
+    // Initial: D is active
+    expect(deItem?.style.display).toBe('');
+    expect(atItem?.style.display).toBe('none');
+
+    // Click Austria
+    const aBtn = getByTestId('flag-A');
+    fireEvent.click(aBtn);
+
+    await waitFor(() => {
+      // DE should be hidden now (Radio button behavior)
+      expect(deItem?.style.display).toBe('none');
+      // AT should be visible
+      expect(atItem?.style.display).toBe('');
+    });
+  });
+
+  it('persists selection to localStorage', async () => {
+    const storageKey = 'test-dach-storage';
+    
+    // 1. Render and change selection (Enable persistence)
+    const { getByTestId, unmount } = render(
+      <DACHSwitch 
+        defaultAllActive={false} 
+        defaultActive="D" 
+        persist={true}
+        storageKey={storageKey}
+      />
+    );
+
+    const aBtn = getByTestId('flag-A');
+    fireEvent.click(aBtn); 
+    // Now "D" and "A" should be active
+
+    await waitFor(() => {
+       const stored = JSON.parse(localStorage.getItem(storageKey) || '[]');
+       expect(stored).toContain('D');
+       expect(stored).toContain('A');
+    });
+
+    unmount();
+
+    // 2. Re-render (simulate reload). 
+    // We pass defaultActive="CH" to prove it's IGNORED in favor of storage.
+    render(
+      <DACHSwitch 
+        defaultAllActive={false} 
+        defaultActive="CH" 
+        persist={true}
+        storageKey={storageKey}
+      />
+    );
+
+    const deItem = document.getElementById('de-item');
+    const atItem = document.getElementById('at-item');
+    const chItem = document.getElementById('ch-item');
+
+    // Should match stored state (D & A), not default (CH)
+    expect(deItem?.style.display).toBe('');
+    expect(atItem?.style.display).toBe('');
+    expect(chItem?.style.display).toBe('none');
   });
 });

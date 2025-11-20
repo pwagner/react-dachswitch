@@ -1,3 +1,4 @@
+
 # React DACHSwitch 🏔️
 
 A lightweight, aesthetic, and reusable React component for country-based content filtering, specifically designed for the DACH region (Germany 🇩🇪, Austria 🇦🇹, Switzerland 🇨🇭).
@@ -7,6 +8,7 @@ A lightweight, aesthetic, and reusable React component for country-based content
 - **Zero Dependencies** (besides React/ReactDOM)
 - **DOM-based Filtering**: Works with any HTML structure, not just React components.
 - **Plug & Play**: Drop it in, and it automatically works on elements with `data-country` (customizable).
+- **State Persistence**: Optionally saves user selection to `localStorage` so it remembers preferences on reload.
 - **Customizable**: Supports single-select, multi-select, and "Select All" modes.
 - **Flexible**: Filter by standard data attributes or custom attributes (like `lang` or `data-market`).
 - **Aesthetic**: Built with modern UI principles (Tailwind-ready).
@@ -19,21 +21,10 @@ npm install react-dachswitch
 
 ## Styling (Important)
 
-This component uses **Tailwind CSS** classes. For the styles to appear correctly, you must include the package in your `tailwind.config.js` content array so Tailwind scans it for class names:
+This component uses **Tailwind CSS** classes. To ensure it looks correct, you must import the provided CSS file in your application (e.g., in `App.tsx`, `main.tsx`, or `_app.tsx`):
 
-```js
-// tailwind.config.js
-module.exports = {
-  content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-    // Add this line:
-    "./node_modules/react-dachswitch/**/*.{js,ts,jsx,tsx}"
-  ],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
-}
+```javascript
+import 'react-dachswitch/dist/style.css';
 ```
 
 ## Usage
@@ -43,12 +34,13 @@ module.exports = {
 
 ```tsx
 import { DACHSwitch } from 'react-dachswitch';
+import 'react-dachswitch/dist/style.css';
 
 function App() {
   return (
     <div>
       {/* Automatically finds all [data-country] elements */}
-      <DACHSwitch />
+      <DACHSwitch persist={true} />
 
       <div className="grid">
         <div data-country="DE">German Product</div>
@@ -69,7 +61,9 @@ function App() {
 | `showAllToggle` | `boolean` | `true` | Shows the "DACH" master toggle switch. |
 | `defaultAllActive` | `boolean` | `true` | Whether all countries are visible by default. |
 | `singleSelect` | `boolean` | `false` | If `true`, only one country can be active at a time. |
-| `defaultActive` | `string` \| `string[]` | `"D"` | Initial country/countries if `defaultAllActive` is false. Accepts an array (e.g., `["D", "CH"]`). |
+| `defaultActive` | `string` \| `string[]` | `"D"` | Initial country. Accepts Keys (e.g. "D") OR Values (e.g. "DE"). Accepts array (e.g., `["DE", "CH"]`). Ignored if `defaultAllActive` is true. |
+| `persist` | `boolean` | `true` | If `true`, saves the selection to `localStorage`. |
+| `storageKey` | `string` | `"dach-switch-selection"` | The `localStorage` key used to save state. |
 | `codes` | `Record<string, string>` | `{ D:"DE", ...}` | Map of UI labels to data values. |
 
 ## Advanced Usage
@@ -92,11 +86,12 @@ Astro components are static by default. To enable the interactive filtering feat
 ```astro
 ---
 import { DACHSwitch } from 'react-dachswitch';
+import 'react-dachswitch/dist/style.css';
 ---
 
 <header>
   <!-- 'client:load' ensures React hydrates this component immediately -->
-  <DACHSwitch client:load />
+  <DACHSwitch client:load persist={true} />
 </header>
 
 <main>
@@ -128,7 +123,7 @@ if (!initialCountry) return <div>Loading...</div>;
 return (
   <DACHSwitch 
     defaultAllActive={false}
-    defaultActive={initialCountry}
+    defaultActive={initialCountry} // Can be "AT" or "A"
   />
 );
 ```
