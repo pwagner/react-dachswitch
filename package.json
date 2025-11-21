@@ -1,7 +1,7 @@
 {
   "name": "react-dachswitch",
-  "version": "1.3.1",
-  "description": "A lightweight, country-based content filtering React component for the DACH region.",
+  "version": "1.3.2",
+  "description": "A country-code-based content filtering React component for the DACH region.",
   "main": "./dist/react-dachswitch.umd.cjs",
     "module": "./dist/react-dachswitch.js",
   "types": "./dist/index.d.ts",
