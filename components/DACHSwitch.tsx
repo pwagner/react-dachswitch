@@ -1,5 +1,36 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 
-import React, { useState, useEffect, useMemo } from 'react';
+// --- Types ---
+
+export interface CountryOption {
+  /**
+   * The text displayed on the button (e.g., "D", "A", "LI").
+   * Acts as the unique identifier for the UI state.
+   */
+  label: string;
+
+  /**
+   * The primary country code to match against the HTML attribute (e.g., "DE", "AT").
+   */
+  code: string;
+
+  /**
+   * Optional emoji flag. Defaults to a globe if not provided.
+   */
+  flag?: string;
+
+  /**
+   * Optional array of alternative codes that should also match this country.
+   *
+   * The primary `code` value is always matched. This array allows you to include
+   * additional variations (e.g., shorthand, legacy, or ISO alpha-3 codes) that
+   * should be treated as equivalent.
+   *
+   * The main `label` and `code` values are NOT automatically included here.
+   * e.g., if code is "DE", you might add ["D", "DEU"].
+   */
+  acceptedCodes?: string[];
+}
 
 export interface DACHSwitchProps {
   /**
@@ -12,28 +43,39 @@ export interface DACHSwitchProps {
   /**
    * The CSS Selector identifying the elements to be filtered.
    * If omitted, it defaults to selecting all elements that have the `countryCodeAttribute`.
-   * (e.g., default becomes "[data-country]").
    */
   targetSelector?: string;
 
   /**
-   * An object mapping UI labels to country codes.
-   * Default: {"D": "DE", "A": "AT", "CH": "CH"}
+   * An array of country configuration objects.
+   * If provided, this overrides the default DACH configuration.
+   * * Default (internal):
+   * [
+   * { label: "D", code: "DE", flag: "🇩🇪" },
+   * { label: "A", code: "AT", flag: "🇦🇹" },
+   * { label: "CH", code: "CH", flag: "🇨🇭" }
+   * ]
    */
-  codes?: Record<string, string>;
+  countries?: CountryOption[];
 
   /**
    * The initial active UI label(s) OR value(s).
-   * Can be a single key/value (e.g., "D" or "DE") or an array (e.g., ["D", "AT"]).
+   * Can be a single key (e.g., "D" or "DE") or an array (e.g., ["D", "AT"]).
    * Ignored if defaultAllActive is true.
    */
   defaultActive?: string | string[];
 
   /**
-   * Whether to show the master "DACH" toggle button.
+   * Whether to show the master "All" toggle button.
    * Default: true
    */
   showAllToggle?: boolean;
+
+  /**
+   * Label for the "All" toggle.
+   * Default: Concatenated country labels (e.g., "DACH") or custom provided label.
+   */
+  allToggleLabel?: string;
 
   /**
    * Whether all countries should be active by default on mount.
@@ -44,7 +86,6 @@ export interface DACHSwitchProps {
 
   /**
    * If true, clicking a flag deselects all others (Radio button behavior).
-   * If false, multiple flags can be active simultaneously.
    * Default: false
    */
   singleSelect?: boolean;
@@ -57,142 +98,162 @@ export interface DACHSwitchProps {
 
   /**
    * The key used for localStorage when persist is true.
-   * Change this if you have multiple switches on the same site.
    * Default: "dach-switch-selection"
    */
   storageKey?: string;
 }
 
-const FLAGS: Record<string, string> = {
-  "D": "🇩🇪",
-  "A": "🇦🇹",
-  "CH": "🇨🇭"
-};
+// --- Defaults ---
+
+const DEFAULT_COUNTRIES: CountryOption[] = [
+  { label: "D", code: "DE", flag: "🇩🇪" },
+  { label: "A", code: "AT", flag: "🇦🇹" },
+  { label: "CH", code: "CH", flag: "🇨🇭" }
+];
 
 export const DACHSwitch: React.FC<DACHSwitchProps> = ({
   countryCodeAttribute = "data-country",
-  targetSelector, // Now optional
-  codes = { "D": "DE", "A": "AT", "CH": "CH" },
+  targetSelector,
+  countries = DEFAULT_COUNTRIES,
   defaultActive = "D",
   showAllToggle = true,
+  allToggleLabel,
   defaultAllActive = true,
   singleSelect = false,
   persist = true,
   storageKey = "dach-switch-selection"
 }) => {
-  // Helper to get all available labels
-  const allLabels = useMemo(() => Object.keys(codes), [codes]);
+  
+  // Memoize the labels for easy access
+  const allLabels = useMemo(() => countries.map(c => c.label), [countries]);
 
-  // Initialize state with Lazy Initializer for Persistence and Normalization
+  // Determine the label for the "All" toggle
+  const effectiveAllLabel = useMemo(() => {
+    if (allToggleLabel) return allToggleLabel;
+    
+    // Concatenate all country labels to form the "All" toggle text (e.g., "DACH", "UKUS").
+    return countries
+      .map(country => country.label)
+      .join('')
+      .toUpperCase();
+
+  }, [allToggleLabel, countries]);
+
+  // --- State Initialization ---
+  
   const [activeLabels, setActiveLabels] = useState<string[]>(() => {
-    // 1. Try to load from LocalStorage if enabled
+    // 1. Try Persistence
     if (persist && typeof window !== 'undefined') {
       try {
         const saved = window.localStorage.getItem(storageKey);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed)) {
-            // Sanity check: filter out any keys that no longer exist in 'codes'
-            const validKeys = parsed.filter(k => Object.prototype.hasOwnProperty.call(codes, k));
-            if (validKeys.length > 0) {
-              return validKeys;
-            }
+            // Validate keys exist in current config
+            const validKeys = parsed.filter(k => allLabels.includes(k));
+            if (validKeys.length > 0) return validKeys;
           }
         }
-      } catch (error) {
-        console.warn("DACHSwitch: Failed to parse localStorage item", error);
+      } catch (e) {
+        console.warn("DACHSwitch: LocalStorage parse error", e);
       }
     }
 
-    // 2. Fallback: Handle defaultAllActive
+    // 2. Fallback: Default All
     if (defaultAllActive) return [...allLabels];
 
-    // 3. Fallback: Normalize defaultActive
-    // This allows users to pass "DE" (value) instead of "D" (key) and still work.
+    // 3. Fallback: specific defaultActive
     const inputs = Array.isArray(defaultActive) ? defaultActive : [defaultActive];
-    const normalizedDefaults: string[] = [];
-
+    const normalized: string[] = [];
+    
     inputs.forEach(input => {
-      // Check if input is a Key (e.g., "D")
-      if (Object.prototype.hasOwnProperty.call(codes, input)) {
-        normalizedDefaults.push(input);
+      // Check if input is a label
+      if (allLabels.includes(input)) {
+        normalized.push(input);
         return;
       }
-      // Check if input is a Value (e.g., "DE") -> find its Key
-      const foundKey = Object.keys(codes).find(key => codes[key] === input);
-      if (foundKey) {
-        normalizedDefaults.push(foundKey);
-      }
+      // Check if input matches a country code
+      const found = countries.find(c => c.code === input);
+      if (found) normalized.push(found.label);
     });
 
-    // If normalization resulted in empty array but we had inputs, fallback to empty (nothing selected)
-    // or if inputs were empty, defaults to empty.
-    return normalizedDefaults;
+    return normalized.length > 0 ? normalized : [...allLabels];
   });
 
-  // Computed property: Are all options currently selected?
-  const isAllSelected = allLabels.length > 0 && allLabels.every(label => activeLabels.includes(label));
+  // --- Logic ---
 
-  // Effect: Save to LocalStorage whenever selection changes
+  const isAllSelected = useMemo(() => {
+    return allLabels.length > 0 && allLabels.every(l => activeLabels.includes(l));
+  }, [allLabels, activeLabels]);
+
+  // Persist State
   useEffect(() => {
     if (persist && typeof window !== 'undefined') {
       window.localStorage.setItem(storageKey, JSON.stringify(activeLabels));
     }
   }, [activeLabels, persist, storageKey]);
 
-  const filterContent = () => {
-    // If no selector provided, target anything with the specific attribute
+  // --- Filtering Engine ---
+
+  const filterContent = useCallback(() => {
     const effectiveSelector = targetSelector || `[${countryCodeAttribute}]`;
     const targets = document.querySelectorAll(effectiveSelector);
+
+    // Create a Set of ALL accepted codes based on active labels
+    const activeCodes = new Set<string>();
     
-    // Map active labels to their actual data codes
-    const activeCodes = new Set(activeLabels.map(label => codes[label]));
+    activeLabels.forEach(label => {
+      const config = countries.find(c => c.label === label);
+      if (config) {
+        activeCodes.add(config.code.toUpperCase()); // Primary code (e.g. "DE")
+        if (config.acceptedCodes) {
+          // Aliases (e.g. "D") - ensure they are also checked as uppercase
+          config.acceptedCodes.forEach(ac => activeCodes.add(ac.toUpperCase())); 
+        }
+      }
+    });
 
     targets.forEach((node) => {
       const element = node as HTMLElement;
-      
-      // Elements without the attribute are always visible (if caught by a broad selector)
-      // OR if they are layout elements wrapping the content.
+
+      // Safe check: if element doesn't have the attribute, leave it alone
       if (!element.hasAttribute(countryCodeAttribute)) {
         element.style.display = '';
         return;
       }
 
-      const elementCode = element.getAttribute(countryCodeAttribute);
-      
-      // Show if the element's code is in our active set
-      if (elementCode && activeCodes.has(elementCode)) {
+      const rawValue = element.getAttribute(countryCodeAttribute);
+      // Ensure the element's attribute value is also converted to uppercase for consistent checking
+      const elementCode = rawValue ? rawValue.toUpperCase() : "";
+
+      if (activeCodes.has(elementCode)) {
         element.style.display = '';
       } else {
         element.style.display = 'none';
       }
     });
-  };
+  }, [activeLabels, countries, countryCodeAttribute, targetSelector]);
 
-  // Run filter on mount and when selection changes
+  // Apply filter on change
   useEffect(() => {
     filterContent();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeLabels, targetSelector, countryCodeAttribute, codes]);
+  }, [filterContent]);
 
-  // Handler for clicking the "DACH" (All) toggle
+
+  // --- Handlers ---
+
   const handleAllToggle = () => {
     if (isAllSelected) {
-      // If all are selected, deselect all
       setActiveLabels([]);
     } else {
-      // Select all
       setActiveLabels([...allLabels]);
     }
   };
 
-  // Handler for clicking a specific country flag
   const handleFlagClick = (label: string) => {
     if (singleSelect) {
-      // Radio behavior: Select only this one
       setActiveLabels([label]);
     } else {
-      // Checkbox behavior
       if (activeLabels.includes(label)) {
         setActiveLabels(prev => prev.filter(l => l !== label));
       } else {
@@ -204,73 +265,62 @@ export const DACHSwitch: React.FC<DACHSwitchProps> = ({
   return (
     <div className="inline-flex items-center justify-center p-1.5 bg-slate-100/90 backdrop-blur-sm rounded-xl shadow-inner border border-slate-200 gap-3">
       
-      {/* Master DACH Toggle */}
+      {/* Master Toggle */}
       {showAllToggle && (
         <>
           <button
             onClick={handleAllToggle}
             className={`
               group relative flex items-center justify-center px-3 py-2 rounded-lg text-sm font-bold transition-all duration-200 ease-in-out focus:outline-none
-              ${
-                isAllSelected
-                  ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200'
-                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+              ${isAllSelected
+                ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
               }
             `}
             type="button"
-            title="Toggle All Countries"
+            title="Toggle All"
             aria-pressed={isAllSelected}
           >
-            {/* Toggle Switch Icon */}
             <div className={`mr-2 w-8 h-4 rounded-full relative transition-colors duration-300 ${isAllSelected ? 'bg-emerald-500' : 'bg-slate-300 group-hover:bg-slate-400'}`}>
                <div className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-transform duration-300 ${isAllSelected ? 'translate-x-4' : 'translate-x-0'}`} />
             </div>
-            <span className="tracking-tight">DACH</span>
+            <span className="tracking-tight">{effectiveAllLabel}</span>
           </button>
-
-          {/* Vertical Divider */}
           <div className="w-px h-8 bg-slate-300/60" />
         </>
       )}
 
-      {/* Country Flags */}
+      {/* Dynamic Flags */}
       <div className="flex items-center gap-1">
-        {allLabels.map((label) => {
-          const isActive = activeLabels.includes(label);
-          
-          // Visual Logic:
-          // If "All" is active (via toggle), show flags as colorful but flat (no border/scale).
-          // If specific flags are active (subset), show them colorful AND highlighted (border + bg + scale).
-          
+        {countries.map((country) => {
+          const isActive = activeLabels.includes(country.label);
           const isGlobalActive = showAllToggle && isAllSelected;
           
           const containerClasses = isActive && !isGlobalActive
             ? 'bg-white shadow-sm ring-1 ring-slate-200 scale-105 z-10'
-            : 'hover:bg-slate-200/50'; // Flat state for "All active" or "Inactive"
+            : 'hover:bg-slate-200/50'; 
 
-          // If active (either globally or individually), show full color. Otherwise grayscale.
           const flagClasses = isActive
             ? 'grayscale-0 opacity-100'
             : 'grayscale opacity-40 hover:opacity-60 hover:grayscale-[50%]';
 
           return (
             <button
-              key={label}
-              onClick={() => handleFlagClick(label)}
+              key={country.label}
+              onClick={() => handleFlagClick(country.label)}
               className={`
                 relative flex items-center justify-center p-2 rounded-lg transition-all duration-200 ease-in-out focus:outline-none
                 ${containerClasses}
               `}
               aria-pressed={isActive}
               type="button"
-              title={`Filter by ${label}`}
-              data-testid={`flag-${label}`}
+              title={`Filter by ${country.label}`}
             >
-              <span 
-                className={`text-2xl leading-none filter transition-all duration-300 ${flagClasses}`}
-              >
-                {FLAGS[label] || '🏳️'}
+              <span className={`text-2xl leading-none filter transition-all duration-300 ${flagClasses}`}>
+                {country.flag || '🌐'}
               </span>
+              {/* Optional: Show label if no flag provided or if design requires it. 
+                  For now we rely on flag emoji as primary visual. */}
             </button>
           );
         })}

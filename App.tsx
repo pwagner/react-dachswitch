@@ -1,7 +1,6 @@
-
 import React, { useState } from 'react';
 import { DACHSwitch } from './components/DACHSwitch';
-import { Package, Settings, BookOpen, Github, Check, Save, ExternalLink, Globe } from 'lucide-react';
+import { Package, Settings, BookOpen, Github, Check, Save, ExternalLink, Globe, PlusCircle } from 'lucide-react';
 
 const App: React.FC = () => {
   // Configuration state for the demo
@@ -9,8 +8,19 @@ const App: React.FC = () => {
     showAllToggle: true,
     defaultAllActive: true,
     singleSelect: false,
-    persist: true
+    persist: true,
+    includeLiechtenstein: false // NEW: Toggle for the custom country demo
   });
+
+  // NEW: Define custom countries array if Liechtenstein is enabled
+  const customCountries: CountryOption[] | undefined = config.includeLiechtenstein 
+    ? [
+        { label: "D", code: "DE", flag: "🇩🇪" },
+        { label: "A", code: "AT", flag: "🇦🇹" },
+        { label: "CH", code: "CH", flag: "🇨🇭" },
+        { label: "LI", code: "LI", acceptedCodes: ["LIE", "L"], flag: "🇱🇮" }
+      ]
+    : undefined;
 
   // Force re-render of component when config changes (simulate fresh mount)
   const componentKey = JSON.stringify(config);
@@ -55,13 +65,13 @@ const App: React.FC = () => {
                 <span 
                     className="
                         absolute 
-                        text-red-700                 /* Dark Red color */
+                        text-red-700                  /* Dark Red color */
                         text-xl 
                         transform 
                         -rotate-3 
                         origin-bottom-left
-                        -top-1                         /* Move up */
-                        -left-25                       /* Move slightly right */
+                        -top-1                       /* Move up */
+                        -left-25                      /* Move slightly right */
                     "
                     style={{ fontFamily: 'Permanent Marker, cursive' }} 
                 >
@@ -96,7 +106,7 @@ const App: React.FC = () => {
               </label>
 
               <label className="flex items-center space-x-2 cursor-pointer select-none bg-white px-3 py-1.5 rounded border border-slate-200 hover:border-slate-300 transition-all sm:bg-transparent sm:border-0 sm:p-0">
-                <div 
+                 <div 
                   onClick={() => toggleConfig('defaultAllActive')}
                   className={`w-5 h-5 rounded border flex items-center justify-center transition-colors shrink-0 ${config.defaultAllActive ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-300'}`}
                 >
@@ -106,7 +116,7 @@ const App: React.FC = () => {
               </label>
 
               <label className="flex items-center space-x-2 cursor-pointer select-none bg-white px-3 py-1.5 rounded border border-slate-200 hover:border-slate-300 transition-all sm:bg-transparent sm:border-0 sm:p-0">
-                 <div 
+                  <div 
                   onClick={() => toggleConfig('singleSelect')}
                   className={`w-5 h-5 rounded border flex items-center justify-center transition-colors shrink-0 ${config.singleSelect ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-slate-300'}`}
                 >
@@ -124,19 +134,31 @@ const App: React.FC = () => {
                 </div>
                 <span className="text-slate-700 font-medium">Persist</span>
               </label>
+
+              {/* NEW: Toggle for Liechtenstein Demo */}
+              <label className="flex items-center space-x-2 cursor-pointer select-none bg-white px-3 py-1.5 rounded border border-slate-200 hover:border-slate-300 transition-all sm:bg-transparent sm:border-0 sm:p-0 sm:border-l sm:border-slate-300 sm:pl-6">
+                 <div 
+                  onClick={() => toggleConfig('includeLiechtenstein')}
+                  className={`w-5 h-5 rounded border flex items-center justify-center transition-colors shrink-0 ${config.includeLiechtenstein ? 'bg-purple-600 border-purple-600 text-white' : 'bg-white border-slate-300'}`}
+                >
+                  {config.includeLiechtenstein && <PlusCircle className="w-3.5 h-3.5" />}
+                </div>
+                <span className="text-slate-900 font-medium">Add Liechtenstein (Custom)</span>
+              </label>
             </div>
 
           </div>
 
           {/* Demo Canvas */}
           <div className="p-6 sm:p-10 flex flex-col items-center bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px] min-h-[400px]">
-             
+              
              {/* The Component */}
              <div className="mb-12 transform sm:scale-110 transition-transform origin-center z-10">
               <DACHSwitch 
-                key={componentKey} // Forces remount on config change
+                key={componentKey} 
                 targetSelector=".content-card" 
                 countryCodeAttribute="data-country"
+                countries={customCountries}
                 showAllToggle={config.showAllToggle}
                 defaultAllActive={config.defaultAllActive}
                 singleSelect={config.singleSelect}
@@ -176,6 +198,20 @@ const App: React.FC = () => {
                 <h3 className="font-bold text-slate-900 mb-2 text-lg">Zurich Lab</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">Exclusive content visible only when Switzerland is active.</p>
               </div>
+
+              {/* NEW: LI (Custom) - Matches "LI" or "L" or "LIE" */}
+              {config.includeLiechtenstein && (
+                <div className="content-card group bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:border-blue-800/50 hover:shadow-lg hover:shadow-blue-200/50 transition-all duration-300" data-country="LIE">
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="text-4xl filter drop-shadow-sm">🇱🇮</span>
+                    <span className="text-[10px] font-bold px-2 py-1 bg-slate-100 text-slate-500 rounded uppercase tracking-wider">Liechtenstein</span>
+                  </div>
+                  <h3 className="font-bold text-slate-900 mb-2 text-lg">Vaduz Vault</h3>
+                  <p className="text-sm text-slate-500 leading-relaxed">
+                     Visible if <strong>Liechtenstein</strong> is enabled. This card uses <code>data-country="LIE"</code>.
+                  </p>
+                </div>
+              )}
               
                {/* Universal */}
                <div className="bg-slate-100/50 p-6 rounded-xl border border-dashed border-slate-300/75 flex flex-col justify-center items-center text-center sm:col-span-2 lg:col-span-3 xl:col-span-1">
@@ -209,7 +245,6 @@ const App: React.FC = () => {
             <h2 className="text-3xl m-0">Documentation</h2>
           </div>
 
-          {/* Reduced padding on mobile (p-4 vs p-10) */}
           <div className="bg-white rounded-2xl p-4 sm:p-10 shadow-sm border border-slate-200">
             <h3 className="text-xl text-slate-900 mt-0">Installation</h3>
             <div className="relative group">
@@ -294,8 +329,75 @@ import 'react-dachswitch/dist/style.css';
                     <td className="py-2 px-2 sm:py-3 sm:px-4">"dach-..."</td>
                     <td className="py-2 px-2 sm:py-3 sm:px-4">The localStorage key used.</td>
                   </tr>
+                  <tr className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                    <td className="py-2 px-2 sm:py-3 sm:px-4 font-mono text-blue-600 font-medium whitespace-nowrap">countries</td>
+                    <td className="py-2 px-2 sm:py-3 sm:px-4 whitespace-nowrap">CountryOption[]</td>
+                    <td className="py-2 px-2 sm:py-3 sm:px-4">[D, A, CH]</td>
+                    <td className="py-2 px-2 sm:py-3 sm:px-4">An array of country configuration objects. Overrides the default DACH configuration.</td>
+                  </tr>
                 </tbody>
               </table>
+            </div>
+
+            <h3 className="text-xl text-slate-900 mt-8">Custom Countries</h3>
+            <p>You can override the default DACH set by passing the <code>countries</code> prop.</p>
+            <pre className="bg-slate-900 text-slate-50 p-3 sm:p-4 rounded-lg overflow-x-auto shadow-md max-w-full text-xs sm:text-sm mt-4">
+<code>{`<DACHSwitch 
+  countries={[
+    { label: "D", code: "DE", flag: "🇩🇪" },
+    { label: "LI", code: "LI", flag: "🇱🇮", acceptedCodes: ["LIE", "L"] }
+  ]}
+/>`}</code>
+            </pre>
+
+            <div class="space-y-4 p-4 sm:p-6 bg-white border border-slate-200 rounded-xl shadow-lg">
+              <h3 class="text-xl font-bold text-slate-800 border-b pb-2">Type Definition: CountryOption</h3>
+              
+              <p class="text-slate-600">
+                The <code class="font-mono bg-slate-100 p-1 rounded">countries</code> prop requires an array of objects conforming to the <code class="font-mono bg-slate-100 p-1 rounded">CountryOption</code> interface. This interface defines how each country button behaves (its label, its primary matching code, and any alternative codes it should recognize).
+              </p>
+
+              <div class="overflow-x-auto rounded-lg border border-slate-300">
+                <table class="w-full text-sm text-left text-slate-700">
+                  <thead class="text-xs text-slate-900 uppercase bg-slate-100">
+                    <tr>
+                      <th scope="col" class="py-2 px-4 sm:px-6">Property</th>
+                      <th scope="col" class="py-2 px-4 sm:px-6">Type</th>
+                      <th scope="col" class="py-2 px-4 sm:px-6">Description</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="bg-white border-b hover:bg-slate-50">
+                      <td class="py-3 px-4 sm:px-6 font-mono font-medium text-blue-600">label</td>
+                      <td class="py-3 px-4 sm:px-6 font-mono text-xs">string</td>
+                      <td class="py-3 px-4 sm:px-6">
+                        The text displayed on the button (e.g., "D", "A", "LI"). Acts as the unique identifier for the UI state.
+                      </td>
+                    </tr>
+                    <tr class="bg-white border-b hover:bg-slate-50">
+                      <td class="py-3 px-4 sm:px-6 font-mono font-medium text-blue-600">code</td>
+                      <td class="py-3 px-4 sm:px-6 font-mono text-xs">string</td>
+                      <td class="py-3 px-4 sm:px-6">
+                        The primary country code to match against the HTML attribute (e.g., "DE", "AT"). This code is always matched against elements in the DOM.
+                      </td>
+                    </tr>
+                    <tr class="bg-white border-b hover:bg-slate-50">
+                      <td class="py-3 px-4 sm:px-6 font-mono font-medium text-blue-600">flag?</td>
+                      <td class="py-3 px-4 sm:px-6 font-mono text-xs">string</td>
+                      <td class="py-3 px-4 sm:px-6">
+                        Optional emoji flag used for visual representation.
+                      </td>
+                    </tr>
+                    <tr class="bg-white hover:bg-slate-50">
+                      <td class="py-3 px-4 sm:px-6 font-mono font-medium text-blue-600">acceptedCodes?</td>
+                      <td class="py-3 px-4 sm:px-6 font-mono text-xs">string[]</td>
+                      <td class="py-3 px-4 sm:px-6">
+                        Optional array of alternative codes that should also match this country. This is necessary if elements in your HTML are tagged with values other than the main <code class="font-mono bg-slate-100 p-1 rounded">code</code>. Example: If <code class="font-mono bg-slate-100 p-1 rounded">code</code> is "DE", and <code class="font-mono bg-slate-100 p-1 rounded">acceptedCodes</code> is <code class="font-mono bg-slate-100 p-1 rounded">["D"]</code>, elements tagged with <code class="font-mono bg-slate-100 p-1 rounded">data-country="DE"</code> or <code class="font-mono bg-slate-100 p-1 rounded">data-country="D"</code> will match.
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
             <h3 className="text-xl text-slate-900 mt-8">Astro Best Practice</h3>

@@ -64,7 +64,7 @@ function App() {
 | `defaultActive` | `string` \| `string[]` | `"D"` | Initial country. Accepts Keys (e.g. "D") OR Values (e.g. "DE"). Accepts array (e.g., `["DE", "CH"]`). Ignored if `defaultAllActive` is true. |
 | `persist` | `boolean` | `true` | If `true`, saves the selection to `localStorage`. |
 | `storageKey` | `string` | `"dach-switch-selection"` | The `localStorage` key used to save state. |
-| `codes` | `Record<string, string>` | `{ D:"DE", ...}` | Map of UI labels to data values. |
+| `countries` | `CountryOption[]` | `DACH Default` | Array of country config objects `{ label, code, flag, acceptedCodes }`. |
 
 ## Advanced Usage
 
@@ -126,6 +126,29 @@ return (
     defaultActive={initialCountry} // Can be "AT" or "A"
   />
 );
+```
+
+### 🌍 Custom Countries (Beyond DACH)
+
+You can override the default countries to support any region (e.g., adding Liechtenstein, or using US/UK/CA).
+
+```
+import { DACHSwitch } from 'react-dachswitch';
+
+const myCountries = [
+  { label: "D", code: "DE", flag: "🇩🇪" },
+  { label: "A", code: "AT", flag: "🇦🇹" },
+  { label: "CH", code: "CH", flag: "🇨🇭" },
+  // Adding Liechtenstein
+  { 
+    label: "LI", 
+    code: "LI", 
+    flag: "🇱🇮", 
+    acceptedCodes: ["LIE", "L"] // Optional aliases
+  }
+];
+
+<DACHSwitch countries={myCountries} />
 ```
 
 ## Development & Testing
